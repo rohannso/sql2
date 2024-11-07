@@ -1,0 +1,109 @@
+CREATE TABLE Authors (
+    AuthorID INT PRIMARY KEY,
+    Name VARCHAR(50) NOT NULL,
+    Nationality VARCHAR(30)
+);
+
+CREATE TABLE Books (
+    BookID INT PRIMARY KEY,
+    Title VARCHAR(100) NOT NULL,
+    AuthorID INT,
+    YearPublished INT,
+    Genre VARCHAR(30),
+    FOREIGN KEY (AuthorID) REFERENCES Authors(AuthorID)
+);
+
+CREATE TABLE Borrowers (
+    BorrowerID INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Address VARCHAR(100)
+);
+
+CREATE TABLE BorrowedBooks (
+    BorrowID INT PRIMARY KEY,
+    BookID INT,
+    BorrowerID INT,
+    BorrowDate DATE,
+    ReturnDate DATE,
+    FOREIGN KEY (BookID) REFERENCES Books(BookID),
+    FOREIGN KEY (BorrowerID) REFERENCES Borrowers(BorrowerID)
+);
+
+
+-- Insert Data into Authors
+INSERT INTO Authors (AuthorID, Name, Nationality) VALUES
+    (1, 'Agatha Christie', 'British'),
+    (2, 'J.K. Rowling', 'British'),
+    (3, 'George Orwell', 'British'),
+    (4, 'Haruki Murakami', 'Japanese'),
+    (5, 'Paulo Coelho', 'Brazilian');
+
+-- Insert Data into Books
+INSERT INTO Books (BookID, Title, AuthorID, YearPublished, Genre) VALUES
+    (1, 'Murder on the Orient Express', 1, 1934, 'Mystery'),
+    (2, 'Harry Potter and the Philosophers Stone', 2, 1997, 'Fantasy'),
+    (3, '1984', 3, 1949, 'Dystopian'),
+    (4, 'Kafka on the Shore', 4, 2002, 'Fantasy'),
+    (5, 'The Alchemist', 5, 1988, 'Adventure'),
+    (6, 'Animal Farm', 3, 1945, 'Political Satire');
+
+-- Insert Data into Borrowers
+INSERT INTO Borrowers (BorrowerID, Name, Address) VALUES
+    (1, 'Alice Johnson', '123 Maple Street'),
+    (2, 'Bob Smith', '456 Oak Avenue'),
+    (3, 'Charlie Brown', '789 Pine Road');
+
+-- Insert Data into BorrowedBooks
+INSERT INTO BorrowedBooks (BorrowID, BookID, BorrowerID, BorrowDate, ReturnDate) VALUES
+    (1, 1, 1, '2024-10-01', '2024-10-15'),
+    (2, 3, 2, '2024-10-05', '2024-10-20'),
+    (3, 2, 1, '2024-11-01', NULL),
+    (4, 4, 3, '2024-11-02', NULL);
+
+
+
+SELECT Books.Title, Authors.Name AS Author
+FROM Books
+INNER JOIN Authors ON Books.AuthorID = Authors.AuthorID;
+
+SELECT Authors.Name, Books.Title
+FROM Authors
+LEFT JOIN Books ON Authors.AuthorID = Books.AuthorID;
+
+SELECT Books.Title, Authors.Name AS Author
+FROM Books
+RIGHT JOIN Authors ON Books.AuthorID = Authors.AuthorID;
+
+SELECT Authors.Name AS Author, Books.Title
+FROM Authors
+FULL JOIN Books ON Authors.AuthorID = Books.AuthorID;
+
+-- SELECT Authors.Name, Books.Title
+-- FROM Authors
+-- NATURAL JOIN Books;
+
+SELECT Name FROM Authors
+WHERE AuthorID IN (
+    SELECT AuthorID FROM Books
+    GROUP BY AuthorID
+    HAVING COUNT(*) > 1
+);
+
+SELECT Title, 
+       (SELECT DATEDIFF(ReturnDate, BorrowDate)
+        FROM BorrowedBooks
+        WHERE BorrowedBooks.BookID = Books.BookID) AS DaysBorrowed
+FROM Books;
+
+SELECT Name FROM Authors a
+WHERE NOT EXISTS (
+    SELECT 1 FROM Books b WHERE a.AuthorID = b.AuthorID
+);
+
+CREATE VIEW BorrowedBookDetails AS
+SELECT b.Title AS BookTitle, br.Name AS BorrowerName, bb.BorrowDate, bb.ReturnDate
+FROM BorrowedBooks bb
+JOIN Books b ON bb.BookID = b.BookID
+JOIN Borrowers br ON bb.BorrowerID = br.BorrowerID;
+
+SELECT * FROM BorrowedBookDetails;
